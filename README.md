@@ -1,6 +1,9 @@
 # Express Tutorial
 
+name : Dinesh Pandikona
+
 ## Setup
+
 - Run `npm install` from the project root.
 - Run `npm install` from `client/`.
 
