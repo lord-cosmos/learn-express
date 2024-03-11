@@ -1,56 +1,73 @@
-const fs = require('fs');
-const path = require('path');
-const express = require('express');
+const fs = require("fs");
+const path = require("path");
+const express = require("express");
 const app = express();
-var cors = require('cors');
+var cors = require("cors");
 const port = 8000;
 
 let users;
-fs.readFile(path.resolve(__dirname, './data/users.json'), function(err, data) {
-  console.log('reading file ... ');
-  if(err) throw err;
+fs.readFile(path.resolve(__dirname, "./data/users.json"), function (err, data) {
+  console.log("reading file ... ");
+  if (err) throw err;
   users = JSON.parse(data);
-})
+});
 
 const addMsgToRequest = function (req, res, next) {
-  if(users) {
+  if (users) {
     req.users = users;
     next();
-  }
-  else {
+  } else {
     return res.json({
-        error: {message: 'users not found', status: 404}
+      error: { message: "users not found", status: 404 },
     });
   }
-  
-}
+};
 
-app.use(
-  cors({origin: 'http://localhost:3000'})
-);
-app.use('/read/usernames', addMsgToRequest);
+app.use(cors({ origin: "http://localhost:3000" }));
 
-app.get('/read/usernames', (req, res) => {
-  let usernames = req.users.map(function(user) {
-    return {id: user.id, username: user.username};
+app.use("/read/usernames", addMsgToRequest);
+app.get("/read/usernames", (req, res) => {
+  console.log(req.users);
+  let usernames = req.users.map(function (user) {
+    return { id: user.id, username: user.username };
   });
+  // console.log(usernames);
   res.send(usernames);
+});
+
+// define the middleware for route, to add data to req.
+app.use("/read/username/:name", addMsgToRequest);
+
+app.get("/read/username/:name", (req, res) => {
+  const name = req.params.name;
+  const user_with_name = req.users.filter(function (user) {
+    return user.username === name;
+  });
+  if (user_with_name.length === 0) {
+    return res.status(404).send("User not found");
+  } else {
+    res.send(user_with_name);
+  }
 });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/write/adduser', addMsgToRequest);
+app.use("/write/adduser", addMsgToRequest);
 
-app.post('/write/adduser', (req, res) => {
+app.post("/write/adduser", (req, res) => {
   let newuser = req.body;
   req.users.push(newuser);
-  fs.writeFile(path.resolve(__dirname, './data/users.json'), JSON.stringify(req.users), (err) => {
-    if (err) console.log('Failed to write');
-    else console.log('User Saved');
-  });
-  res.send('done');
-})
+  fs.writeFile(
+    path.resolve(__dirname, "./data/users.json"),
+    JSON.stringify(req.users),
+    (err) => {
+      if (err) console.log("Failed to write");
+      else console.log("User Saved");
+    }
+  );
+  res.send("done");
+});
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+  console.log(`Example app listening on port ${port}`);
+});
